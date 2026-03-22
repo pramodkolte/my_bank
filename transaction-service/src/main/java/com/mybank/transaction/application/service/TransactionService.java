@@ -27,12 +27,11 @@ public class TransactionService implements TransactionUseCase {
     @Transactional
     public Transaction initiateTransfer(UUID senderId, UUID receiverId, BigDecimal amount) {
         
-        try (var scope = new StructuredTaskScope.ShutdownOnFailure()) {
+        try (var scope = StructuredTaskScope.open(StructuredTaskScope.Joiner.allSuccessfulOrThrow())) {
             StructuredTaskScope.Subtask<Boolean> senderSubtask = scope.fork(() -> accountClientPort.isAccountActive(senderId));
             StructuredTaskScope.Subtask<Boolean> receiverSubtask = scope.fork(() -> accountClientPort.isAccountActive(receiverId));
             
             scope.join();
-            scope.throwIfFailed(RuntimeException::new);
             
             if (!senderSubtask.get() || !receiverSubtask.get()) {
                 throw new IllegalStateException("One or both accounts are inactive or do not exist.");

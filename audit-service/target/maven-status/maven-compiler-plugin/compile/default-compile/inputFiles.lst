@@ -1,0 +1,9 @@
+D:\Projects\my_bank\audit-service\src\main\java\com\mybank\audit\application\port\in\AuditUseCase.java
+D:\Projects\my_bank\audit-service\src\main\java\com\mybank\audit\application\service\AuditService.java
+D:\Projects\my_bank\audit-service\src\main\java\com\mybank\audit\AuditServiceApplication.java
+D:\Projects\my_bank\audit-service\src\main\java\com\mybank\audit\domain\model\AuditRecord.java
+D:\Projects\my_bank\audit-service\src\main\java\com\mybank\audit\domain\port\out\AuditStoragePort.java
+D:\Projects\my_bank\audit-service\src\main\java\com\mybank\audit\infrastructure\adapter\in\messaging\KafkaAuditListener.java
+D:\Projects\my_bank\audit-service\src\main\java\com\mybank\audit\infrastructure\adapter\out\persistence\AuditRecordEntity.java
+D:\Projects\my_bank\audit-service\src\main\java\com\mybank\audit\infrastructure\adapter\out\persistence\MongoAuditRepository.java
+D:\Projects\my_bank\audit-service\src\main\java\com\mybank\audit\infrastructure\adapter\out\persistence\MongoAuditStorageAdapter.java

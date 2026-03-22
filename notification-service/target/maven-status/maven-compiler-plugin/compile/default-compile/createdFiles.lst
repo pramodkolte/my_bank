@@ -1,0 +1,10 @@
+com\mybank\notification\application\port\in\NotificationUseCase.class
+com\mybank\notification\domain\port\out\NotificationDispatcherPort.class
+com\mybank\notification\infrastructure\adapter\out\web\WebhookClient.class
+com\mybank\notification\domain\model\Notification.class
+com\mybank\notification\infrastructure\adapter\in\web\NotificationTestController.class
+com\mybank\notification\domain\model\Notification$NotificationBuilder.class
+com\mybank\notification\NotificationServiceApplication.class
+com\mybank\notification\infrastructure\adapter\out\web\WebhookNotificationAdapter.class
+com\mybank\notification\application\service\NotificationService.class
+com\mybank\notification\infrastructure\adapter\in\messaging\KafkaNotificationListener.class
