@@ -1,0 +1,137 @@
+services:
+  # --- Infrastructure ---
+  postgres-db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 300M
+
+  redis:
+    image: redis:7-alpine
+    deploy:
+      resources:
+        limits:
+          memory: 100M
+
+  kafka:
+    image: apache/kafka:latest
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+      KAFKA_JVM_PERFORMANCE_OPTS: "-Xmx400m -Xms400m"
+    deploy:
+      resources:
+        limits:
+          memory: 500M
+
+  mongodb:
+    image: mongo:latest
+    deploy:
+      resources:
+        limits:
+          memory: 300M
+
+  # Add this LIGHTWEIGHT log viewer (uses only ~20MB RAM)
+  dozzle:
+    image: amir20/dozzle:latest
+    container_name: dozzle
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - "8888:8080" # Access log UI at http://<EC2-IP>:8888
+    deploy:
+      resources:
+        limits:
+          memory: 50M
+
+  # --- Spring Cloud Infrastructure ---
+  discovery-server:
+    image: ${DOCKER_HUB_USER}/discovery-server:latest
+    environment:
+      - JAVA_OPTS=-Xmx200m
+    deploy:
+      resources:
+        limits:
+          memory: 250M
+    volumes:
+      - /home/ec2-user/banking-app/logs/discovery-server:/app/logs
+
+  config-server:
+    image: ${DOCKER_HUB_USER}/config-server:latest
+    environment:
+      - JAVA_OPTS=-Xmx200m
+    deploy:
+      resources:
+        limits:
+          memory: 250M
+    volumes:
+      - /home/ec2-user/banking-app/logs/discovery-server:/app/logs
+
+  api-gateway:
+    image: ${DOCKER_HUB_USER}/api-gateway:latest
+    environment:
+      - JAVA_OPTS=-Xmx256m
+    ports:
+      - "80:8080"
+    deploy:
+      resources:
+        limits:
+          memory: 350M
+    volumes:
+      - /home/ec2-user/banking-app/logs/api-gateway:/app/logs
+
+  # --- Business Logic Services ---
+  identity-service:
+    image: ${DOCKER_HUB_USER}/identity-service:latest
+    environment:
+      - JAVA_OPTS=-Xmx300m
+    deploy:
+      resources:
+        limits:
+          memory: 400M
+    volumes:
+      - /home/ec2-user/banking-app/logs/identity-service:/app/logs
+
+  account-service:
+    image: ${DOCKER_HUB_USER}/account-service:latest
+    environment:
+      - JAVA_OPTS=-Xmx300m
+    deploy:
+      resources:
+        limits:
+          memory: 400M
+    volumes:
+      - /home/ec2-user/banking-app/logs/account-service:/app/logs
+
+  notification-service:
+    image: ${DOCKER_HUB_USER}/notification-service:latest
+    environment:
+      - JAVA_OPTS=-Xmx256m
+    deploy:
+      resources:
+        limits:
+          memory: 350M
+    volumes:
+      - /home/ec2-user/banking-app/logs/notification-service:/app/logs
+
+  audit-service:
+    image: ${DOCKER_HUB_USER}/audit-service:latest
+    environment:
+      - JAVA_OPTS=-Xmx256m
+    deploy:
+      resources:
+        limits:
+          memory: 350M
+    volumes:
+      - /home/ec2-user/banking-app/logs/audit-service:/app/logs
+
+networks:
+  default:
+    name: banking-network

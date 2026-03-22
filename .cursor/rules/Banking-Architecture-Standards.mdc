@@ -1,0 +1,13 @@
+---
+description: Apply banking architecture standards including Java 25, Hexagonal Architecture, Kafka.
+globs: *
+---
+
+# Banking Architecture Standards
+
+- **Tech Stack**: Java 25, Spring Boot 3.4+, Spring Cloud, Maven.
+- **Concurrency**: Use Java 25 Virtual Threads for all I/O operations. Implement Structured Concurrency (`StructuredTaskScope`) for parallel service calls.
+- **Design Pattern**: Follow Hexagonal Architecture (Ports and Adapters) for each service.
+- **Resilience**: Mandatory use of Resilience4j Circuit Breakers and Retry patterns for all Feign clients.
+- **Messaging**: Use Apache Kafka with Avro schemas for all inter-service events.
+- **Security**: Implement stateless OAuth2/JWT validation. No PII (Sensitive Info) should be logged in plain text.
