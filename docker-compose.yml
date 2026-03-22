@@ -56,6 +56,7 @@ services:
     image: ${DOCKER_HUB_USER}/discovery-server:latest
     environment:
       - JAVA_OPTS=-Xmx200m
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
     deploy:
       resources:
         limits:
@@ -67,6 +68,7 @@ services:
     image: ${DOCKER_HUB_USER}/config-server:latest
     environment:
       - JAVA_OPTS=-Xmx200m
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
     deploy:
       resources:
         limits:
@@ -78,6 +80,7 @@ services:
     image: ${DOCKER_HUB_USER}/api-gateway:latest
     environment:
       - JAVA_OPTS=-Xmx256m
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
     ports:
       - "80:8080"
     deploy:
@@ -92,6 +95,8 @@ services:
     image: ${DOCKER_HUB_USER}/identity-service:latest
     environment:
       - JAVA_OPTS=-Xmx300m
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://config-server:9191
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
     deploy:
       resources:
         limits:
@@ -103,6 +108,8 @@ services:
     image: ${DOCKER_HUB_USER}/account-service:latest
     environment:
       - JAVA_OPTS=-Xmx300m
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://config-server:9191
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
     deploy:
       resources:
         limits:
@@ -114,6 +121,8 @@ services:
     image: ${DOCKER_HUB_USER}/notification-service:latest
     environment:
       - JAVA_OPTS=-Xmx256m
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://config-server:9191
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
     deploy:
       resources:
         limits:
@@ -125,12 +134,27 @@ services:
     image: ${DOCKER_HUB_USER}/audit-service:latest
     environment:
       - JAVA_OPTS=-Xmx256m
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://config-server:9191
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
     deploy:
       resources:
         limits:
           memory: 350M
     volumes:
       - /home/ec2-user/banking-app/logs/audit-service:/app/logs
+
+  transaction-service:
+    image: ${DOCKER_HUB_USER}/transaction-service:latest
+    environment:
+      - JAVA_OPTS=-Xmx300m
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://config-server:9191
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
+    deploy:
+      resources:
+        limits:
+          memory: 400M
+    volumes:
+      - /home/ec2-user/banking-app/logs/transaction-service:/app/logs
 
 networks:
   default:

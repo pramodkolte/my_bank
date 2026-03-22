@@ -18,6 +18,14 @@ spring:
             redis-rate-limiter.requestedTokens: 1
             key-resolver: "#{@userKeyResolver}"
       routes:
+        - id: discovery-server
+          uri: lb://discovery-server
+          predicates:
+            - Path=/api/v1/discovery/**
+        - id: config-server
+          uri: lb://config-server
+          predicates:
+            - Path=/api/v1/config/**
         - id: identity-service
           uri: lb://identity-service
           predicates:
@@ -30,6 +38,14 @@ spring:
           uri: lb://transaction-service
           predicates:
             - Path=/api/v1/transactions/**
+        - id: notification-service
+          uri: lb://notification-service
+          predicates:
+            - Path=/api/v1/notifications/**
+        - id: audit-service
+          uri: lb://audit-service
+          predicates:
+            - Path=/api/v1/audit/**
 
 eureka:
   client:
