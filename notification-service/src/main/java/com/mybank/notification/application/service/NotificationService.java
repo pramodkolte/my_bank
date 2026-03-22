@@ -17,7 +17,7 @@ import java.util.concurrent.Executors;
 public class NotificationService implements NotificationUseCase {
 
     private final NotificationDispatcherPort dispatcherPort;
-    // Java 25 Virtual Threads for unbounded scalable concurrency
+    // Java 21 Virtual Threads for unbounded scalable concurrency
     private final ExecutorService virtualThreadExecutor = Executors.newVirtualThreadPerTaskExecutor();
 
     public NotificationService(NotificationDispatcherPort dispatcherPort) {
