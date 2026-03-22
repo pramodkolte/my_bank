@@ -13,6 +13,7 @@ public class UserPersistenceAdapter implements UserRepositoryPort {
 
     private final SpringDataUserRepository repository;
 
+    @SuppressWarnings("null")
     @Override
     public User save(User user) {
         UserEntity entity = UserEntity.builder()

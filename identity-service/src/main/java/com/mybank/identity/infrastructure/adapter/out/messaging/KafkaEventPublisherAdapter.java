@@ -12,11 +12,13 @@ public class KafkaEventPublisherAdapter implements EventPublisherPort {
 
     private final KafkaTemplate<String, Object> kafkaTemplate;
 
+    @SuppressWarnings("null")
     @Override
     public void publishUserRegisteredEvent(User user) {
         kafkaTemplate.send("user-registered-topic", user.getId().toString(), user);
     }
 
+    @SuppressWarnings("null")
     @Override
     public void publishKycStatusUpdatedEvent(User user) {
         kafkaTemplate.send("kyc-status-updated-topic", user.getId().toString(), user);
