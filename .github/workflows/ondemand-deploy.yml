@@ -10,6 +10,13 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
+        service:
+          [
+            discovery-server,
+            config-server,
+            api-gateway,
+            identity-service,
+            account-service,
             notification-service,
             audit-service,
             transaction-service,
