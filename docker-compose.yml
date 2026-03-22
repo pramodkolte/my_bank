@@ -72,7 +72,7 @@ services:
         limits:
           memory: 250M
     volumes:
-      - /home/ec2-user/banking-app/logs/discovery-server:/app/logs
+      - /home/ec2-user/banking-app/logs/config-server:/app/logs
 
   api-gateway:
     image: ${DOCKER_HUB_USER}/api-gateway:latest
