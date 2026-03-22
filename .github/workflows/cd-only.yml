@@ -46,7 +46,7 @@ jobs:
           host: ${{ steps.ec2-info.outputs.ip }}
           username: ec2-user
           key: ${{ secrets.EC2_SSH_KEY }}
-          source: "docker-compose.yml"
+          source: "docker-compose.yml,postgres-init/"
           target: "~/banking-app/"
 
       - name: SSH Deploy

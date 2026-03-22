@@ -1,3 +1,0 @@
-notification:
-  webhook:
-    url: ${NOTIFICATION_WEBHOOK_URL:http://webhook-mock:9999}
