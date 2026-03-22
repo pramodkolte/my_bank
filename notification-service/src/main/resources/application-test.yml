@@ -11,4 +11,4 @@ eureka:
 
 notification:
   webhook:
-    url: http://localhost:9999
+    url: http://webhook-mock:9999

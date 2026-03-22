@@ -81,6 +81,8 @@ services:
     environment:
       - JAVA_OPTS=-Xmx256m
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
+      - SPRING_DATA_REDIS_HOST=redis
+
     ports:
       - "80:8080"
     deploy:
