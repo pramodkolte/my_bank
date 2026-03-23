@@ -1,9 +1,0 @@
-D:\Projects\my_bank\notification-service\src\main\java\com\mybank\notification\application\port\in\NotificationUseCase.java
-D:\Projects\my_bank\notification-service\src\main\java\com\mybank\notification\application\service\NotificationService.java
-D:\Projects\my_bank\notification-service\src\main\java\com\mybank\notification\domain\model\Notification.java
-D:\Projects\my_bank\notification-service\src\main\java\com\mybank\notification\domain\port\out\NotificationDispatcherPort.java
-D:\Projects\my_bank\notification-service\src\main\java\com\mybank\notification\infrastructure\adapter\in\messaging\KafkaNotificationListener.java
-D:\Projects\my_bank\notification-service\src\main\java\com\mybank\notification\infrastructure\adapter\in\web\NotificationTestController.java
-D:\Projects\my_bank\notification-service\src\main\java\com\mybank\notification\infrastructure\adapter\out\web\WebhookClient.java
-D:\Projects\my_bank\notification-service\src\main\java\com\mybank\notification\infrastructure\adapter\out\web\WebhookNotificationAdapter.java
-D:\Projects\my_bank\notification-service\src\main\java\com\mybank\notification\NotificationServiceApplication.java

@@ -61,9 +61,11 @@ jobs:
             echo "${{ secrets.DOCKER_HUB_TOKEN }}" | docker login -u "${{ secrets.DOCKER_HUB_USER }}" --password-stdin
             export DOCKER_HUB_USER=${{ secrets.DOCKER_HUB_USER }}
             export DB_PASSWORD=${{ secrets.DB_PASSWORD }}
-            docker compose pull
-            docker compose down --remove-orphans
-            docker compose up -d
+            export CORE_SERVICES="identity-service account-service transaction-service notification-service audit-service"
+            docker compose pull $CORE_SERVICES
+            docker compose stop $CORE_SERVICES
+            docker compose rm -f $CORE_SERVICES
+            docker compose up -d $CORE_SERVICES
 
       - name: Revoke Runner IP
         if: always()

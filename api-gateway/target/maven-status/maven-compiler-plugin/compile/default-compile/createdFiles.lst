@@ -1,3 +1,0 @@
-com\mybank\gateway\ApiGatewayApplication.class
-com\mybank\gateway\filter\CorrelationIdFilter.class
-com\mybank\gateway\config\RateLimiterConfig.class

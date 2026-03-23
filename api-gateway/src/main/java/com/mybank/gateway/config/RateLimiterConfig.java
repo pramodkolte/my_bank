@@ -1,5 +1,6 @@
 package com.mybank.gateway.config;
 
+import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.cloud.gateway.filter.ratelimit.KeyResolver;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -8,6 +9,7 @@ import reactor.core.publisher.Mono;
 import java.util.Objects;
 
 @Configuration
+@EnableCaching
 public class RateLimiterConfig {
 
     @Bean

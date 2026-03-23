@@ -4,52 +4,8 @@ server:
 spring:
   application:
     name: api-gateway
-  data:
-    redis:
-      host: redis
-      port: 6379
-  cloud:
-    gateway:
-      default-filters:
-        - name: RequestRateLimiter
-          args:
-            redis-rate-limiter.replenishRate: 100
-            redis-rate-limiter.burstCapacity: 100
-            redis-rate-limiter.requestedTokens: 1
-            key-resolver: "#{@userKeyResolver}"
-      routes:
-        - id: discovery-server
-          uri: http://discovery-server:8761
-          predicates:
-            - Path=/api/v1/discovery/**
-          filters:
-            - RewritePath=/api/v1/discovery/(?<segment>.*), /${segment}
-        - id: config-server
-          uri: http://config-server:9191
-          predicates:
-            - Path=/api/v1/config/**
-          filters:
-            - RewritePath=/api/v1/config/(?<segment>.*), /${segment}
-        - id: identity-service
-          uri: lb://identity-service
-          predicates:
-            - Path=/api/v1/identity/**
-        - id: account-service
-          uri: lb://account-service
-          predicates:
-            - Path=/api/v1/accounts/**
-        - id: transaction-service
-          uri: lb://transaction-service
-          predicates:
-            - Path=/api/v1/transactions/**
-        - id: notification-service
-          uri: lb://notification-service
-          predicates:
-            - Path=/api/v1/notifications/**
-        - id: audit-service
-          uri: lb://audit-service
-          predicates:
-            - Path=/api/v1/audit/**
+  config:
+    import: "optional:configserver:http://config-server:9191"
 
 eureka:
   client:
