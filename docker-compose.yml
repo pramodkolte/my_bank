@@ -14,22 +14,25 @@ services:
     volumes:
       - ./postgres-init:/docker-entrypoint-initdb.d
 
-
-  kafka:
+  kafka-broker:
     image: apache/kafka:latest
-    container_name: kafka
+    container_name: kafka-broker
     environment:
       KAFKA_NODE_ID: 1
       KAFKA_PROCESS_ROLES: broker,controller
       KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
-      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-broker:9092
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka-broker:9093
       KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_JVM_PERFORMANCE_OPTS: "-Xmx400m -Xms400m"
     healthcheck:
-      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --list || exit 1"]
+      test:
+        [
+          "CMD-SHELL",
+          "/opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --list || exit 1",
+        ]
       interval: 10s
       timeout: 10s
       retries: 5
@@ -164,8 +167,8 @@ services:
       - SPRING_CONFIG_IMPORT=optional:configserver:http://config-server:9191
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
     depends_on:
-      kafka:
-        condition: service_started
+      kafka-broker:
+        condition: service_healthy
       discovery-server:
         condition: service_healthy
       config-server:
@@ -184,8 +187,8 @@ services:
       - SPRING_CONFIG_IMPORT=optional:configserver:http://config-server:9191
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
     depends_on:
-      kafka:
-        condition: service_started
+      kafka-broker:
+        condition: service_healthy
       mongodb:
         condition: service_started
       discovery-server:
