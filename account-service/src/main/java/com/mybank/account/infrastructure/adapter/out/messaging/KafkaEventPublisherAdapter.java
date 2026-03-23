@@ -14,20 +14,23 @@ public class KafkaEventPublisherAdapter implements AccountEventPublisherPort {
 
     private final KafkaTemplate<String, Object> kafkaTemplate;
 
+    @SuppressWarnings("null")
     @Override
     public void publishAccountCreatedEvent(Account account) {
         kafkaTemplate.send("banking.accounts", account.getId().toString(), account);
     }
 
+    @SuppressWarnings("null")
     @Override
     public void publishTransactionSuccessEvent(UUID transactionId) {
-        kafkaTemplate.send("banking.transactions.replies", transactionId.toString(), 
+        kafkaTemplate.send("banking.transactions.replies", transactionId.toString(),
                 Map.of("transactionId", transactionId, "status", "SUCCESS"));
     }
 
+    @SuppressWarnings("null")
     @Override
     public void publishTransactionFailedEvent(UUID transactionId, String reason) {
-        kafkaTemplate.send("banking.transactions.replies", transactionId.toString(), 
+        kafkaTemplate.send("banking.transactions.replies", transactionId.toString(),
                 Map.of("transactionId", transactionId, "status", "FAILED", "reason", reason));
     }
 }

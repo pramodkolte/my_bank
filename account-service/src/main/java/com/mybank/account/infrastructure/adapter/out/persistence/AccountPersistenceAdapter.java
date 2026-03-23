@@ -14,6 +14,7 @@ public class AccountPersistenceAdapter implements AccountRepositoryPort {
 
     private final SpringDataAccountRepository repository;
 
+    @SuppressWarnings("null")
     @Override
     public Account save(Account account) {
         AccountEntity entity = AccountEntity.builder()
@@ -27,6 +28,7 @@ public class AccountPersistenceAdapter implements AccountRepositoryPort {
         return mapToDomain(saved);
     }
 
+    @SuppressWarnings("null")
     @Override
     public Optional<Account> findById(UUID id) {
         return repository.findById(id).map(this::mapToDomain);

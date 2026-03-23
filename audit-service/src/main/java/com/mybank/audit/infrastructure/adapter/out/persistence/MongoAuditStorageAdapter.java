@@ -11,6 +11,7 @@ public class MongoAuditStorageAdapter implements AuditStoragePort {
 
     private final MongoAuditRepository repository;
 
+    @SuppressWarnings("null")
     @Override
     public void save(AuditRecord record) {
         AuditRecordEntity entity = AuditRecordEntity.builder()
