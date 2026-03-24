@@ -11,7 +11,9 @@ import lombok.NoArgsConstructor;
 import java.util.UUID;
 
 @Entity
-@Table(name = "users")
+@Table(name = "users", uniqueConstraints = {
+    @UniqueConstraint(name = "uk_users_email", columnNames = "email")
+})
 @Data
 @Builder
 @NoArgsConstructor
@@ -20,7 +22,7 @@ public class UserEntity {
     @Id
     private UUID id;
     
-    @Column(unique = true, nullable = false)
+    @Column(nullable = false)
     private String email;
     
     @Column(nullable = false)
