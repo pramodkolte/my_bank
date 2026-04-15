@@ -1,55 +1,4 @@
 services:
-  # --- Infrastructure ---
-  postgres-db:
-    image: postgres:17-alpine
-    environment:
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
-    deploy:
-      resources:
-        limits:
-          memory: 300M
-    volumes:
-      - ./postgres-init:/docker-entrypoint-initdb.d
-
-  kafka-broker:
-    image: apache/kafka:latest
-    container_name: kafka-broker
-    environment:
-      KAFKA_NODE_ID: 1
-      KAFKA_PROCESS_ROLES: broker,controller
-      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-broker:9092
-      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka-broker:9093
-      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
-      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
-      KAFKA_JVM_PERFORMANCE_OPTS: "-Xmx512m -Xms512m"
-    healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "/opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --list || exit 1",
-        ]
-      interval: 10s
-      timeout: 10s
-      retries: 5
-    deploy:
-      resources:
-        limits:
-          memory: 1024M
-
-  mongodb:
-    image: mongo:latest
-    deploy:
-      resources:
-        limits:
-          memory: 300M
-
   # Add this LIGHTWEIGHT log viewer (uses only ~20MB RAM)
   dozzle:
     image: amir20/dozzle:latest
@@ -58,33 +7,23 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
     ports:
       - "8888:8080" # Access log UI at http://<EC2-IP>:8888
-    deploy:
-      resources:
-        limits:
-          memory: 50M
 
   # --- Spring Cloud Infrastructure ---
   discovery-server:
     image: ${DOCKER_HUB_USER}/discovery-server:latest
     environment:
-      - JAVA_OPTS=-Xmx200m --enable-preview
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8761/actuator/health"]
       interval: 10s
       timeout: 5s
       retries: 5
-    deploy:
-      resources:
-        limits:
-          memory: 250M
     volumes:
       - /home/ec2-user/banking-app/logs/discovery-server:/app/logs
 
   config-server:
     image: ${DOCKER_HUB_USER}/config-server:latest
     environment:
-      - JAVA_OPTS=-Xmx200m --enable-preview
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9191/actuator/health"]
@@ -94,19 +33,13 @@ services:
     depends_on:
       discovery-server:
         condition: service_healthy
-    deploy:
-      resources:
-        limits:
-          memory: 250M
     volumes:
       - /home/ec2-user/banking-app/logs/config-server:/app/logs
 
   api-gateway:
     image: ${DOCKER_HUB_USER}/api-gateway:latest
     environment:
-      - JAVA_OPTS=-Xmx256m --enable-preview
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
-
     ports:
       - "80:8080"
     depends_on:
@@ -114,10 +47,6 @@ services:
         condition: service_healthy
       config-server:
         condition: service_healthy
-    deploy:
-      resources:
-        limits:
-          memory: 350M
     volumes:
       - /home/ec2-user/banking-app/logs/api-gateway:/app/logs
 
@@ -125,106 +54,65 @@ services:
   identity-service:
     image: ${DOCKER_HUB_USER}/identity-service:latest
     environment:
-      - JAVA_OPTS=-Xmx300m --enable-preview
       - SPRING_CONFIG_IMPORT=optional:configserver:http://config-server:9191
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
     depends_on:
-      postgres-db:
-        condition: service_healthy
       discovery-server:
         condition: service_healthy
       config-server:
         condition: service_healthy
-    deploy:
-      resources:
-        limits:
-          memory: 400M
     volumes:
       - /home/ec2-user/banking-app/logs/identity-service:/app/logs
 
   account-service:
     image: ${DOCKER_HUB_USER}/account-service:latest
     environment:
-      - JAVA_OPTS=-Xmx300m --enable-preview
       - SPRING_CONFIG_IMPORT=optional:configserver:http://config-server:9191
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
-      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka-broker:9092
     depends_on:
-      postgres-db:
-        condition: service_healthy
       discovery-server:
         condition: service_healthy
       config-server:
         condition: service_healthy
-    deploy:
-      resources:
-        limits:
-          memory: 400M
     volumes:
       - /home/ec2-user/banking-app/logs/account-service:/app/logs
 
   notification-service:
     image: ${DOCKER_HUB_USER}/notification-service:latest
     environment:
-      - JAVA_OPTS=-Xmx256m --enable-preview
       - SPRING_CONFIG_IMPORT=optional:configserver:http://config-server:9191
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
-      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka-broker:9092
     depends_on:
-      kafka-broker:
-        condition: service_healthy
       discovery-server:
         condition: service_healthy
       config-server:
         condition: service_healthy
-    deploy:
-      resources:
-        limits:
-          memory: 350M
     volumes:
       - /home/ec2-user/banking-app/logs/notification-service:/app/logs
 
   audit-service:
     image: ${DOCKER_HUB_USER}/audit-service:latest
     environment:
-      - JAVA_OPTS=-Xmx256m --enable-preview
       - SPRING_CONFIG_IMPORT=optional:configserver:http://config-server:9191
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
-      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka-broker:9092
     depends_on:
-      kafka-broker:
-        condition: service_healthy
-      mongodb:
-        condition: service_started
       discovery-server:
         condition: service_healthy
       config-server:
         condition: service_healthy
-    deploy:
-      resources:
-        limits:
-          memory: 350M
     volumes:
       - /home/ec2-user/banking-app/logs/audit-service:/app/logs
 
   transaction-service:
     image: ${DOCKER_HUB_USER}/transaction-service:latest
     environment:
-      - JAVA_OPTS=-Xmx300m --enable-preview
       - SPRING_CONFIG_IMPORT=optional:configserver:http://config-server:9191
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
-      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka-broker:9092
     depends_on:
-      postgres-db:
-        condition: service_healthy
       discovery-server:
         condition: service_healthy
       config-server:
         condition: service_healthy
-    deploy:
-      resources:
-        limits:
-          memory: 400M
     volumes:
       - /home/ec2-user/banking-app/logs/transaction-service:/app/logs
 

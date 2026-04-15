@@ -7,8 +7,7 @@ spring:
     hibernate:
       ddl-auto: update
     show-sql: true
-  kafka:
-    bootstrap-servers: kafka-broker:9092
+
 
 server:
   port: 8082

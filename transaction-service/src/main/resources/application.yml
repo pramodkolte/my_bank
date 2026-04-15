@@ -7,8 +7,7 @@ spring:
     hibernate:
       ddl-auto: update
     show-sql: true
-  kafka:
-    bootstrap-servers: kafka-broker:9092
+
   security:
     oauth2:
       resourceserver:
@@ -26,7 +25,7 @@ eureka:
 resilience4j:
   circuitbreaker:
     instances:
-      kafkaPublisher:
+      snsPublisher:
         slidingWindowSize: 5
         minimumNumberOfCalls: 3
         waitDurationInOpenState: 5000

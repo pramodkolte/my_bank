@@ -2,25 +2,25 @@ package com.mybank.identity.infrastructure.adapter.out.messaging;
 
 import com.mybank.identity.domain.model.User;
 import com.mybank.identity.domain.port.out.EventPublisherPort;
+import io.awspring.cloud.sns.core.SnsTemplate;
 import lombok.RequiredArgsConstructor;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
 
 @Component
 @RequiredArgsConstructor
-public class KafkaEventPublisherAdapter implements EventPublisherPort {
+public class SnsEventPublisherAdapter implements EventPublisherPort {
 
-    private final KafkaTemplate<String, Object> kafkaTemplate;
+    private final SnsTemplate snsTemplate;
 
     @SuppressWarnings("null")
     @Override
     public void publishUserRegisteredEvent(User user) {
-        kafkaTemplate.send("user-registered-topic", user.getId().toString(), user);
+        snsTemplate.convertAndSend("user-registered-topic", user);
     }
 
     @SuppressWarnings("null")
     @Override
     public void publishKycStatusUpdatedEvent(User user) {
-        kafkaTemplate.send("kyc-status-updated-topic", user.getId().toString(), user);
+        snsTemplate.convertAndSend("kyc-status-updated-topic", user);
     }
 }

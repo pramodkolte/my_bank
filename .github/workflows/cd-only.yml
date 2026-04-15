@@ -1,4 +1,4 @@
-name: CD - Deploy Core Services Only
+name: CD - Wakeup and Start Services
 
 on:
   workflow_dispatch:
@@ -16,6 +16,28 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
+      - name: Start RDS Instance
+        id: rds-info
+        run: |
+          # Check status first; only start if 'stopped'
+          STATUS=$(aws rds describe-db-instances --db-instance-identifier ${{ secrets.RDS_INSTANCE_ID }} --query 'DBInstances[0].DBInstanceStatus' --output text)
+          if [ "$STATUS" == "stopped" ]; then
+            aws rds start-db-instance --db-instance-identifier ${{ secrets.RDS_INSTANCE_ID }}
+            echo "RDS Start command sent. Waiting for it to become available..."
+            aws rds wait db-instance-available --db-instance-identifier ${{ secrets.RDS_INSTANCE_ID }}
+            echo "RDS is now available."
+          else
+            echo "RDS is already $STATUS."
+            if [ "$STATUS" != "available" ]; then
+              echo "Waiting for RDS to become available..."
+              aws rds wait db-instance-available --db-instance-identifier ${{ secrets.RDS_INSTANCE_ID }}
+            fi
+          fi
+
+          # Export Endpoint
+          RDS_DB_HOST=$(aws rds describe-db-instances --db-instance-identifier ${{ secrets.RDS_INSTANCE_ID }} --query 'DBInstances[0].Endpoint.Address' --output text)
+          echo "rds_db_host=$RDS_DB_HOST" >> $GITHUB_OUTPUT
+
       - name: Start EC2 Instance
         run: |
           aws ec2 start-instances --instance-ids ${{ secrets.EC2_INSTANCE_ID }}
@@ -30,6 +52,19 @@ jobs:
           echo "ip=$PUBLIC_IP" >> $GITHUB_OUTPUT
           echo "sg_id=$SG_ID" >> $GITHUB_OUTPUT
           echo "runner_ip=$RUNNER_IP" >> $GITHUB_OUTPUT
+
+      - name: Update MongoDB Atlas Access List
+        run: |
+          # Atlas API uses Digest Auth
+          curl --user "${{ secrets.ATLAS_PUBLIC_KEY }}:${{ secrets.ATLAS_PRIVATE_KEY }}" \
+            --digest \
+            --header "Content-Type: application/json" \
+            --request POST "https://cloud.mongodb.com/api/atlas/v1.0/groups/${{ secrets.ATLAS_PROJECT_ID }}/accessList?pretty=true" \
+            --data '[{
+              "ipAddress": "${{ steps.ec2-info.outputs.ip }}",
+              "comment": "Auto-added by GitHub Actions"
+            }]'
+          echo "EC2 IP ${{ steps.ec2-info.outputs.ip }} added to MongoDB Atlas."
 
       - name: Authorize Runner IP
         run: |
@@ -55,17 +90,16 @@ jobs:
           host: ${{ steps.ec2-info.outputs.ip }}
           username: ec2-user
           key: ${{ secrets.EC2_SSH_KEY }}
-          envs: DOCKER_HUB_USER,DOCKER_HUB_TOKEN,DB_PASSWORD
+          envs: DOCKER_HUB_USER,RDS_DB_PASSWORD,MONGO_DB_PASSWORD,RDS_DB_HOST
           script: |
             mkdir -p ~/banking-app && cd ~/banking-app
-            echo "${{ secrets.DOCKER_HUB_TOKEN }}" | docker login -u "${{ secrets.DOCKER_HUB_USER }}" --password-stdin
+            export RDS_DB_PASSWORD=${{ secrets.RDS_DB_PASSWORD }}
+            export MONGO_DB_PASSWORD=${{ secrets.MONGO_DB_PASSWORD }}
             export DOCKER_HUB_USER=${{ secrets.DOCKER_HUB_USER }}
-            export DB_PASSWORD=${{ secrets.DB_PASSWORD }}
-            export CORE_SERVICES="identity-service account-service transaction-service notification-service audit-service"
-            docker compose pull $CORE_SERVICES
-            docker compose stop $CORE_SERVICES
-            docker compose rm -f $CORE_SERVICES
-            docker compose up -d $CORE_SERVICES
+            export RDS_DB_HOST=${{ steps.rds-info.outputs.rds_db_host }}
+            docker compose pull
+            docker compose down --remove-orphans
+            docker compose up -d
 
       - name: Revoke Runner IP
         if: always()

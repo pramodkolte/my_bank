@@ -27,18 +27,17 @@ public class TransactionService implements TransactionUseCase {
     @Transactional
     public Transaction initiateTransfer(UUID senderId, UUID receiverId, BigDecimal amount) {
         
-        try (var scope = new StructuredTaskScope.ShutdownOnFailure()) {
+        try (var scope = StructuredTaskScope.open(StructuredTaskScope.Joiner.awaitAllSuccessfulOrThrow())) {
             java.util.function.Supplier<Boolean> senderSubtask = scope.fork(() -> accountClientPort.isAccountActive(senderId));
             java.util.function.Supplier<Boolean> receiverSubtask = scope.fork(() -> accountClientPort.isAccountActive(receiverId));
             
             scope.join();
-            scope.throwIfFailed();
             
             if (!senderSubtask.get() || !receiverSubtask.get()) {
                 throw new IllegalStateException("One or both accounts are inactive or do not exist.");
             }
-        } catch (java.util.concurrent.ExecutionException e) {
-            throw new RuntimeException("Account verification failed", e);
+        } catch (StructuredTaskScope.FailedException e) {
+            throw new RuntimeException("Account verification failed", e.getCause());
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new RuntimeException("Account verification interrupted", e);

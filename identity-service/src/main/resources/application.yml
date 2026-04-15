@@ -15,8 +15,7 @@ spring:
     user:
       name: user
       password: ${USER_PASSWORD:password}
-  kafka:
-    bootstrap-servers: kafka:9092
+
 
 server:
   port: 8081
