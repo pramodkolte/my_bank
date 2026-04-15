@@ -1,5 +1,5 @@
 ---
-description: Apply banking architecture standards including Java 25, Hexagonal Architecture, Kafka.
+description: Apply banking architecture standards including Java 25, Hexagonal Architecture, Message Queues.
 globs: *
 ---
 
