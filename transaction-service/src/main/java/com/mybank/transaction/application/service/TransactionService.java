@@ -13,7 +13,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.UUID;
-import java.util.concurrent.StructuredTaskScope;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
 
 @Service
 @RequiredArgsConstructor
@@ -26,21 +28,29 @@ public class TransactionService implements TransactionUseCase {
     @Override
     @Transactional
     public Transaction initiateTransfer(UUID senderId, UUID receiverId, BigDecimal amount) {
-        
-        try (var scope = StructuredTaskScope.open(StructuredTaskScope.Joiner.awaitAllSuccessfulOrThrow())) {
-            java.util.function.Supplier<Boolean> senderSubtask = scope.fork(() -> accountClientPort.isAccountActive(senderId));
-            java.util.function.Supplier<Boolean> receiverSubtask = scope.fork(() -> accountClientPort.isAccountActive(receiverId));
-            
-            scope.join();
-            
-            if (!senderSubtask.get() || !receiverSubtask.get()) {
+
+        // Run both account-active checks in parallel on virtual threads (stable API, Java 21+)
+        try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+            CompletableFuture<Boolean> senderFuture =
+                    CompletableFuture.supplyAsync(() -> accountClientPort.isAccountActive(senderId), executor);
+            CompletableFuture<Boolean> receiverFuture =
+                    CompletableFuture.supplyAsync(() -> accountClientPort.isAccountActive(receiverId), executor);
+
+            // Wait for both; propagates the first exception if any task fails
+            CompletableFuture.allOf(senderFuture, receiverFuture).join();
+
+            if (!senderFuture.get() || !receiverFuture.get()) {
                 throw new IllegalStateException("One or both accounts are inactive or do not exist.");
             }
-        } catch (StructuredTaskScope.FailedException e) {
+        } catch (ExecutionException e) {
             throw new RuntimeException("Account verification failed", e.getCause());
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new RuntimeException("Account verification interrupted", e);
+        } catch (IllegalStateException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new RuntimeException("Account verification failed", e);
         }
 
         Transaction transaction = Transaction.builder()
@@ -51,11 +61,11 @@ public class TransactionService implements TransactionUseCase {
                 .type(TransactionType.TRANSFER)
                 .status(TransactionStatus.INITIATED)
                 .build();
-                
+
         Transaction saved = transactionRepositoryPort.save(transaction);
         // Saga Step 1: Emit event to be picked up by Account-Service
         transactionEventPublisherPort.publishTransactionInitiatedEvent(saved);
-        
+
         return saved;
     }
 
