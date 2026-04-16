@@ -1,4 +1,4 @@
-name: CICD Pipeline
+name: CICD - Build, Push, Wakeup and Deploy
 
 on:
   workflow_dispatch:

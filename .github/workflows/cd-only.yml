@@ -1,4 +1,4 @@
-name: CD - Wakeup and Start Services
+name: CD - Wakeup and Deploy
 
 on:
   workflow_dispatch:
