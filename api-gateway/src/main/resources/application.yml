@@ -5,9 +5,58 @@ spring:
   application:
     name: api-gateway
   config:
-    import: "optional:configserver:http://config-server:9191/api/v1/config"
+    import: "optional:configserver:http://config-server:9191"
+  cloud:
+    gateway:
+      server:
+        webflux:
+          routes:
+            - id: discovery-server
+              uri: http://discovery-server:8761
+              predicates:
+                - Path=/api/v1/discovery/**
+              filters:
+                - name: RewritePath
+                  args:
+                    regexp: /api/v1/discovery/(?<segment>.*)
+                    replacement: /$\{segment}
+            - id: config-server
+              uri: http://config-server:9191
+              predicates:
+                - Path=/api/v1/config/**
+              filters:
+                - name: RewritePath
+                  args:
+                    regexp: /api/v1/config/(?<segment>.*)
+                    replacement: /$\{segment}
+            - id: identity-service
+              uri: lb://identity-service
+              predicates:
+                - Path=/api/v1/identity/**
+            - id: account-service
+              uri: lb://account-service
+              predicates:
+                - Path=/api/v1/accounts/**
+            - id: transaction-service
+              uri: lb://transaction-service
+              predicates:
+                - Path=/api/v1/transactions/**
+            - id: notification-service
+              uri: lb://notification-service
+              predicates:
+                - Path=/api/v1/notifications/**
+            - id: audit-service
+              uri: lb://audit-service
+              predicates:
+                - Path=/api/v1/audit/**
 
 eureka:
   client:
     serviceUrl:
-      defaultZone: http://discovery-server:8761/api/v1/discovery/eureka/
+      defaultZone: http://discovery-server:8761/eureka/
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
