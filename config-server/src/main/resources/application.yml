@@ -1,5 +1,7 @@
 server:
   port: 9191
+  servlet:
+    context-path: /api/v1/config
 
 spring:
   application:
@@ -14,4 +16,4 @@ spring:
 eureka:
   client:
     serviceUrl:
-      defaultZone: http://discovery-server:8761/eureka/
+      defaultZone: http://discovery-server:8761/api/v1/discovery/eureka/
