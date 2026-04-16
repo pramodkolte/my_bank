@@ -1,0 +1,70 @@
+name: Ops - Restart Config and Gateway
+
+on:
+  workflow_dispatch:
+
+jobs:
+  restart:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Get EC2 Public IP & Security Group
+        id: ec2-info
+        run: |
+          PUBLIC_IP=$(aws ec2 describe-instances --instance-ids ${{ secrets.EC2_INSTANCE_ID }} --query 'Reservations[0].Instances[0].PublicIpAddress' --output text)
+          SG_ID=$(aws ec2 describe-instances --instance-ids ${{ secrets.EC2_INSTANCE_ID }} --query 'Reservations[0].Instances[0].SecurityGroups[0].GroupId' --output text)
+          RUNNER_IP=$(curl -s https://ifconfig.me)
+          echo "ip=$PUBLIC_IP" >> $GITHUB_OUTPUT
+          echo "sg_id=$SG_ID" >> $GITHUB_OUTPUT
+          echo "runner_ip=$RUNNER_IP" >> $GITHUB_OUTPUT
+
+      - name: Authorize Runner IP for SSH
+        run: |
+          aws ec2 authorize-security-group-ingress \
+            --group-id ${{ steps.ec2-info.outputs.sg_id }} \
+            --protocol tcp \
+            --port 22 \
+            --cidr ${{ steps.ec2-info.outputs.runner_ip }}/32 \
+          || echo "Rule already exists or error occurred"
+
+      - name: Restart Config Server and API Gateway
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ steps.ec2-info.outputs.ip }}
+          username: ec2-user
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            cd ~/banking-app
+
+            echo ">>> Restarting config-server (forces fresh git clone)..."
+            docker compose up -d --force-recreate config-server
+            echo ">>> Waiting for config-server to become healthy..."
+            for i in $(seq 1 30); do
+              STATUS=$(docker inspect --format='{{.State.Health.Status}}' $(docker compose ps -q config-server) 2>/dev/null)
+              echo "  Attempt $i: config-server health = $STATUS"
+              if [ "$STATUS" = "healthy" ]; then
+                echo "config-server is healthy!"
+                break
+              fi
+              sleep 5
+            done
+
+            echo ">>> Restarting api-gateway..."
+            docker compose up -d --force-recreate api-gateway
+            echo ">>> Done. API Gateway restarted."
+
+      - name: Revoke Runner IP
+        if: always()
+        run: |
+          aws ec2 revoke-security-group-ingress \
+            --group-id ${{ steps.ec2-info.outputs.sg_id }} \
+            --protocol tcp \
+            --port 22 \
+            --cidr ${{ steps.ec2-info.outputs.runner_ip }}/32 \
+          || echo "Authorization could not be revoked or never existed"
