@@ -15,23 +15,25 @@ public class SnsTransactionPublisherAdapter implements TransactionEventPublisher
 
     private final SnsTemplate snsTemplate;
 
+    @SuppressWarnings("null")
     @Override
     @CircuitBreaker(name = "snsPublisher", fallbackMethod = "publishFallback")
     public void publishTransactionInitiatedEvent(Transaction transaction) {
         Map<String, Object> event = Map.of(
-            "transactionId", transaction.getId(),
-            "senderAccountId", transaction.getSenderAccountId(),
-            "receiverAccountId", transaction.getReceiverAccountId(),
-            "amount", transaction.getAmount()
-        );
+                "transactionId", transaction.getId(),
+                "senderAccountId", transaction.getSenderAccountId(),
+                "receiverAccountId", transaction.getReceiverAccountId(),
+                "amount", transaction.getAmount());
         snsTemplate.convertAndSend("transaction-events-topic", event);
     }
 
+    @SuppressWarnings("null")
     @Override
     public void publishTransactionCompletedEvent(Transaction transaction) {
         snsTemplate.convertAndSend("banking-transactions-completed-topic", transaction);
     }
 
+    @SuppressWarnings("null")
     @Override
     public void publishTransactionFailedEvent(Transaction transaction) {
         snsTemplate.convertAndSend("banking-transactions-failed-topic", transaction);

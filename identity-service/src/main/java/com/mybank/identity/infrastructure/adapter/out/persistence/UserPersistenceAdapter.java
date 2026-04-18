@@ -32,6 +32,7 @@ public class UserPersistenceAdapter implements UserRepositoryPort {
         return repository.findByEmail(email).map(this::mapToDomain);
     }
 
+    @SuppressWarnings("null")
     @Override
     public Optional<User> findById(java.util.UUID id) {
         return repository.findById(id).map(this::mapToDomain);

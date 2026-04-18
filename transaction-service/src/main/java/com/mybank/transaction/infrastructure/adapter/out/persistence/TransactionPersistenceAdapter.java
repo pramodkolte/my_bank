@@ -25,10 +25,12 @@ public class TransactionPersistenceAdapter implements TransactionRepositoryPort 
                 .status(transaction.getStatus())
                 .failureReason(transaction.getFailureReason())
                 .build();
+        @SuppressWarnings("null")
         TransactionEntity saved = repository.save(entity);
         return mapToDomain(saved);
     }
 
+    @SuppressWarnings("null")
     @Override
     public Optional<Transaction> findById(UUID id) {
         return repository.findById(id).map(this::mapToDomain);
