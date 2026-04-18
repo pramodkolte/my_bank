@@ -69,6 +69,15 @@ public class AuthService implements AuthUseCase {
     }
 
     @Override
+    public void updateKycStatus(java.util.UUID userId, String statusStr) {
+        User user = userRepositoryPort.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        user.setKycStatus(KYCStatus.valueOf(statusStr.toUpperCase()));
+        User updated = userRepositoryPort.save(user);
+        eventPublisherPort.publishKycStatusUpdatedEvent(updated);
+    }
+
+    @Override
     public boolean verifyUser(java.util.UUID id) {
         return userRepositoryPort.findById(id)
                 .map(user -> user.getKycStatus() == KYCStatus.APPROVED)
