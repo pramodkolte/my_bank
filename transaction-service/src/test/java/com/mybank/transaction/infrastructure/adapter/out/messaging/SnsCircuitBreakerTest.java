@@ -22,25 +22,30 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doThrow;
 
 @SpringBootTest(properties = {
-    "resilience4j.circuitbreaker.instances.snsPublisher.slidingWindowSize=2",
-    "resilience4j.circuitbreaker.instances.snsPublisher.minimumNumberOfCalls=2"
+        "resilience4j.circuitbreaker.instances.snsPublisher.slidingWindowSize=2",
+        "resilience4j.circuitbreaker.instances.snsPublisher.minimumNumberOfCalls=2"
 })
 class SnsCircuitBreakerTest {
 
+    @SuppressWarnings("removal")
     @MockBean
     private SnsTemplate snsTemplate;
 
     // Mock infrastructure beans so the context loads without real connections
+    @SuppressWarnings("removal")
     @MockBean
     private TransactionRepositoryPort transactionRepositoryPort;
 
+    @SuppressWarnings("removal")
     @MockBean
     private AccountClientPort accountClientPort;
 
+    @SuppressWarnings("removal")
     @MockBean
     private JwtDecoder jwtDecoder;
 
     // Prevents @SqsListener from resolving queue attributes against real AWS
+    @SuppressWarnings("removal")
     @MockBean
     private SqsSagaReplyListener sqsSagaReplyListener;
 
@@ -51,20 +56,21 @@ class SnsCircuitBreakerTest {
     void shouldTriggerFallbackOnSnsFailure() {
         // Simulate SNS failure
         doThrow(new RuntimeException("SNS unreachable"))
-            .when(snsTemplate).convertAndSend(anyString(), any(Object.class));
+                .when(snsTemplate).convertAndSend(anyString(), any(Object.class));
 
         Transaction tx = Transaction.builder()
-            .id(UUID.randomUUID())
-            .senderAccountId(UUID.randomUUID())
-            .receiverAccountId(UUID.randomUUID())
-            .amount(BigDecimal.TEN)
-            .type(TransactionType.TRANSFER)
-            .status(TransactionStatus.INITIATED)
-            .build();
+                .id(UUID.randomUUID())
+                .senderAccountId(UUID.randomUUID())
+                .receiverAccountId(UUID.randomUUID())
+                .amount(BigDecimal.TEN)
+                .type(TransactionType.TRANSFER)
+                .status(TransactionStatus.INITIATED)
+                .build();
 
-        // The adapter method is wrapped in @CircuitBreaker. It should call fallback upon encountering Exception.
+        // The adapter method is wrapped in @CircuitBreaker. It should call fallback
+        // upon encountering Exception.
         assertThatThrownBy(() -> publisherAdapter.publishTransactionInitiatedEvent(tx))
-            .isInstanceOf(IllegalStateException.class)
-            .hasMessageContaining("SNS is unreachable");
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("SNS is unreachable");
     }
 }
