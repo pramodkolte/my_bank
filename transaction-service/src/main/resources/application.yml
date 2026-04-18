@@ -11,8 +11,7 @@ spring:
   security:
     oauth2:
       resourceserver:
-        jwt:
-          issuer-uri: http://identity-service:8081 # Use service name for Docker
+        jwt: {}
 
 server:
   port: 8083

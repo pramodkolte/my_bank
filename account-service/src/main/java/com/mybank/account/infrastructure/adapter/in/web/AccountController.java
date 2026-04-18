@@ -9,6 +9,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PostAuthorize;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -23,6 +25,7 @@ public class AccountController {
 
     @GetMapping("/{accountId}")
     @Operation(summary = "Get Account", description = "Retrieves an account by ID")
+    @PostAuthorize("returnObject.body.ownerId.toString() == authentication.tokenAttributes['userId'] or hasRole('MANAGER')")
     public ResponseEntity<Account> getAccount(@PathVariable UUID accountId) {
         Account account = accountUseCase.getAccount(accountId);
         return ResponseEntity.ok(account);
@@ -30,6 +33,7 @@ public class AccountController {
 
     @PostMapping
     @Operation(summary = "Create an Account", description = "Creates a new account after verifying the identity via Feign client.")
+    @PreAuthorize("#request.ownerId.toString() == authentication.tokenAttributes['userId'] or hasRole('MANAGER')")
     public ResponseEntity<Account> createAccount(@Valid @RequestBody CreateAccountRequest request) {
         Account account = accountUseCase.createAccount(request.getOwnerId(), request.getCurrency());
         return ResponseEntity.ok(account);
@@ -37,6 +41,7 @@ public class AccountController {
 
     @PatchMapping("/{accountId}/balance")
     @Operation(summary = "Update Balance", description = "Updates an account balance ensuring thread-safety with Pessimistic Locking.")
+    @PreAuthorize("hasRole('MANAGER')") // Restrict direct balance updates to Managers (e.g. system usage)
     public ResponseEntity<Account> updateBalance(@PathVariable UUID accountId, @Valid @RequestBody UpdateBalanceRequest request) {
         Account account = accountUseCase.updateBalance(accountId, request.getAmount());
         return ResponseEntity.ok(account);
