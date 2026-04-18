@@ -8,6 +8,7 @@ import com.mybank.identity.infrastructure.adapter.in.web.dto.RegisterRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -21,14 +22,14 @@ public class AuthController {
 
     @PostMapping("/register")
     @Operation(summary = "Register a new user", description = "Creates a new user account with specified role.")
-    public ResponseEntity<User> register(@RequestBody RegisterRequest request) {
+    public ResponseEntity<User> register(@Valid @RequestBody RegisterRequest request) {
         User user = authUseCase.register(request.getEmail(), request.getPassword(), request.getRole());
         return ResponseEntity.ok(user);
     }
 
     @PostMapping("/login")
     @Operation(summary = "Authenticate user", description = "Returns a signed JWT upon successful authentication.")
-    public ResponseEntity<AuthResponse> login(@RequestBody LoginRequest request) {
+    public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
         String token = authUseCase.login(request.getEmail(), request.getPassword());
         return ResponseEntity.ok(new AuthResponse(token));
     }

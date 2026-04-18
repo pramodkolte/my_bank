@@ -5,6 +5,7 @@ import com.mybank.transaction.domain.model.Transaction;
 import com.mybank.transaction.infrastructure.adapter.in.web.dto.TransferRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -22,7 +23,7 @@ public class TransactionController {
     // Restricts execution to tokens whose userId claim specifically matches the embedded senderId!
     @PreAuthorize("authentication.tokenAttributes['userId'] == #request.senderId.toString()")
     @Operation(summary = "Initiate Transfer", description = "Initiates a fund transfer securely.")
-    public ResponseEntity<Transaction> initiateTransfer(@RequestBody TransferRequest request) {
+    public ResponseEntity<Transaction> initiateTransfer(@Valid @RequestBody TransferRequest request) {
         Transaction transaction = transactionUseCase.initiateTransfer(
                 request.getSenderId(),
                 request.getReceiverId(),

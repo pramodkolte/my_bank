@@ -6,6 +6,7 @@ import com.mybank.account.infrastructure.adapter.in.web.dto.CreateAccountRequest
 import com.mybank.account.infrastructure.adapter.in.web.dto.UpdateBalanceRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -29,14 +30,14 @@ public class AccountController {
 
     @PostMapping
     @Operation(summary = "Create an Account", description = "Creates a new account after verifying the identity via Feign client.")
-    public ResponseEntity<Account> createAccount(@RequestBody CreateAccountRequest request) {
+    public ResponseEntity<Account> createAccount(@Valid @RequestBody CreateAccountRequest request) {
         Account account = accountUseCase.createAccount(request.getOwnerId(), request.getCurrency());
         return ResponseEntity.ok(account);
     }
 
     @PatchMapping("/{accountId}/balance")
     @Operation(summary = "Update Balance", description = "Updates an account balance ensuring thread-safety with Pessimistic Locking.")
-    public ResponseEntity<Account> updateBalance(@PathVariable UUID accountId, @RequestBody UpdateBalanceRequest request) {
+    public ResponseEntity<Account> updateBalance(@PathVariable UUID accountId, @Valid @RequestBody UpdateBalanceRequest request) {
         Account account = accountUseCase.updateBalance(accountId, request.getAmount());
         return ResponseEntity.ok(account);
     }

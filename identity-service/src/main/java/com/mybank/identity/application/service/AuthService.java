@@ -67,4 +67,11 @@ public class AuthService implements AuthUseCase {
         User updated = userRepositoryPort.save(user);
         eventPublisherPort.publishKycStatusUpdatedEvent(updated);
     }
+
+    @Override
+    public boolean verifyUser(java.util.UUID id) {
+        return userRepositoryPort.findById(id)
+                .map(user -> user.getKycStatus() == KYCStatus.APPROVED)
+                .orElse(false);
+    }
 }
