@@ -9,6 +9,8 @@ import com.mybank.transaction.domain.port.out.TransactionEventPublisherPort;
 import com.mybank.transaction.domain.port.out.TransactionRepositoryPort;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.mybank.transaction.infrastructure.adapter.out.client.AccountDto;
@@ -33,12 +35,29 @@ public class TransactionService implements TransactionUseCase {
     @Transactional
     public Transaction initiateTransfer(UUID authenticatedUserId, UUID senderId, UUID receiverId, BigDecimal amount) {
 
+        SecurityContext context = SecurityContextHolder.getContext();
+
         // Run both account fetches in parallel on virtual threads
         try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
             CompletableFuture<Optional<AccountDto>> senderFuture =
-                    CompletableFuture.supplyAsync(() -> accountClientPort.getAccount(senderId), executor);
+                    CompletableFuture.supplyAsync(() -> {
+                        SecurityContextHolder.setContext(context);
+                        try {
+                            return accountClientPort.getAccount(senderId);
+                        } finally {
+                            SecurityContextHolder.clearContext();
+                        }
+                    }, executor);
+
             CompletableFuture<Optional<AccountDto>> receiverFuture =
-                    CompletableFuture.supplyAsync(() -> accountClientPort.getAccount(receiverId), executor);
+                    CompletableFuture.supplyAsync(() -> {
+                        SecurityContextHolder.setContext(context);
+                        try {
+                            return accountClientPort.getAccount(receiverId);
+                        } finally {
+                            SecurityContextHolder.clearContext();
+                        }
+                    }, executor);
 
             CompletableFuture.allOf(senderFuture, receiverFuture).join();
 

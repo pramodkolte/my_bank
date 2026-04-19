@@ -2,9 +2,11 @@ package com.mybank.transaction.infrastructure.adapter.out.client;
 
 import com.mybank.transaction.domain.port.out.AccountClientPort;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import java.util.UUID;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class AccountClientAdapter implements AccountClientPort {
@@ -24,7 +26,7 @@ public class AccountClientAdapter implements AccountClientPort {
             var response = client.getAccount(accountId);
             return java.util.Optional.ofNullable(response.getData());
         } catch (Exception e) {
-            // Logs would be helpful here in a real app to see why the call failed
+            log.error("Failed to fetch account {} from account-service: {}", accountId, e.getMessage());
             return java.util.Optional.empty();
         }
     }
