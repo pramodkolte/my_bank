@@ -11,8 +11,11 @@ public class GatewayConfig {
     @Bean
     public RouteLocator gatewayRoutes(RouteLocatorBuilder builder) {
         return builder.routes()
-                .route("discovery-server", r -> r.path("/api/v1/discovery/**")
-                        .filters(f -> f.rewritePath("/api/v1/discovery/(?<segment>.*)", "/${segment}"))
+                .route("eureka-internal", r -> r.path("/eureka/**")
+                        .uri("http://discovery-server:8761"))
+                
+                .route("discovery-portal", r -> r.path("/discovery/**", "/api/v1/discovery/**")
+                        .filters(f -> f.rewritePath("/(discovery|api/v1/discovery)(/?(?<segment>.*))", "/${segment}"))
                         .uri("http://discovery-server:8761"))
                 
                 .route("config-server", r -> r.path("/api/v1/config/**")
