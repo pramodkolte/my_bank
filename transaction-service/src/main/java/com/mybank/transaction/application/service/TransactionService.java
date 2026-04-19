@@ -1,16 +1,20 @@
 package com.mybank.transaction.application.service;
 
 import com.mybank.transaction.application.port.in.TransactionUseCase;
+import com.mybank.transaction.domain.event.TransactionCompletedEvent;
+import com.mybank.transaction.domain.event.TransactionFailedEvent;
+import com.mybank.transaction.domain.event.TransactionInitiatedEvent;
 import com.mybank.transaction.domain.model.Transaction;
 import com.mybank.transaction.domain.model.TransactionStatus;
 import com.mybank.transaction.domain.model.TransactionType;
 import com.mybank.transaction.domain.port.out.AccountClientPort;
 import com.mybank.transaction.domain.port.out.IdentityClientPort;
-import com.mybank.transaction.domain.port.out.TransactionEventPublisherPort;
 import com.mybank.transaction.domain.port.out.TransactionRepositoryPort;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.access.AccessDeniedException;
+
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -33,9 +37,9 @@ import java.util.concurrent.Executors;
 public class TransactionService implements TransactionUseCase {
 
     private final TransactionRepositoryPort transactionRepositoryPort;
-    private final TransactionEventPublisherPort transactionEventPublisherPort;
     private final AccountClientPort accountClientPort;
     private final IdentityClientPort identityClientPort;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Override
     @Transactional
@@ -112,8 +116,10 @@ public class TransactionService implements TransactionUseCase {
                 .build();
 
         Transaction saved = transactionRepositoryPort.save(transaction);
-        // Saga Step 1: Emit event to be picked up by Account-Service
-        transactionEventPublisherPort.publishTransactionInitiatedEvent(saved);
+        // Step 1: Publish local event. 
+        // A TransactionEventListener will pick this up AFTER_COMMIT to send to SNS.
+        eventPublisher.publishEvent(new TransactionInitiatedEvent(this, saved));
+
 
         return saved;
     }
@@ -125,7 +131,7 @@ public class TransactionService implements TransactionUseCase {
             .orElseThrow(() -> new IllegalArgumentException("Transaction not found"));
         transaction.setStatus(TransactionStatus.COMPLETED);
         transactionRepositoryPort.save(transaction);
-        transactionEventPublisherPort.publishTransactionCompletedEvent(transaction);
+        eventPublisher.publishEvent(new TransactionCompletedEvent(this, transaction));
     }
 
     @Override
@@ -136,7 +142,7 @@ public class TransactionService implements TransactionUseCase {
         transaction.setStatus(TransactionStatus.FAILED);
         transaction.setFailureReason(reason);
         transactionRepositoryPort.save(transaction);
-        transactionEventPublisherPort.publishTransactionFailedEvent(transaction);
+        eventPublisher.publishEvent(new TransactionFailedEvent(this, transaction));
     }
 
     @Override
