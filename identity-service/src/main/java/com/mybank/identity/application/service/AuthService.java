@@ -13,6 +13,7 @@ import com.mybank.identity.domain.port.out.UserRepositoryPort;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -82,5 +83,35 @@ public class AuthService implements AuthUseCase {
         return userRepositoryPort.findById(id)
                 .map(user -> user.getKycStatus() == KYCStatus.APPROVED)
                 .orElse(false);
+    }
+
+    @Override
+    public List<User> getUsers(String email, Role role, KYCStatus kycStatus) {
+        return userRepositoryPort.findAll(email, role, kycStatus);
+    }
+
+    @Override
+    public User getUserById(UUID id) {
+        return userRepositoryPort.findById(id)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+    }
+
+    @Override
+    public User updateUser(UUID id, String email, Role role, KYCStatus kycStatus) {
+        User user = getUserById(id);
+        if (email != null) user.setEmail(email);
+        if (role != null) user.setRole(role);
+        if (kycStatus != null) user.setKycStatus(kycStatus);
+        
+        User updated = userRepositoryPort.save(user);
+        if (kycStatus != null) {
+            eventPublisherPort.publishKycStatusUpdatedEvent(updated);
+        }
+        return updated;
+    }
+
+    @Override
+    public void deleteUser(UUID id) {
+        userRepositoryPort.deleteById(id);
     }
 }

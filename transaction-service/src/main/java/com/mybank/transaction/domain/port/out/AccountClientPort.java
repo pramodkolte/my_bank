@@ -8,4 +8,5 @@ import java.util.UUID;
 public interface AccountClientPort {
     boolean isAccountActive(UUID accountId);
     Optional<AccountDto> getAccount(UUID accountId);
+    Optional<AccountDto> getAccountStatus(UUID accountId);
 }

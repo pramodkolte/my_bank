@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Data
@@ -20,4 +21,5 @@ public class Transaction {
     private TransactionType type;
     private TransactionStatus status;
     private String failureReason;
+    private LocalDateTime createdAt;
 }

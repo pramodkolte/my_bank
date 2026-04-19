@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -28,6 +29,11 @@ public class AccountService implements AccountUseCase {
     public Account getAccount(UUID accountId) {
         return accountRepositoryPort.findById(accountId)
                 .orElseThrow(() -> new AccountNotFoundException("Account not found with ID: " + accountId));
+    }
+
+    @Override
+    public List<Account> getAccountsByOwner(UUID ownerId) {
+        return accountRepositoryPort.findByOwnerId(ownerId);
     }
 
     @Override
@@ -107,5 +113,29 @@ public class AccountService implements AccountUseCase {
         } catch(Exception e) {
             eventPublisherPort.publishTransactionFailedEvent(transactionId, e.getMessage());
         }
+    }
+
+    @Override
+    public List<Account> getAccounts(UUID ownerId, String currency, String status, BigDecimal minBalance, BigDecimal maxBalance) {
+        return accountRepositoryPort.findAll(ownerId, currency, status, minBalance, maxBalance);
+    }
+
+    @Override
+    @Transactional
+    public Account updateAccount(UUID accountId, String status, BigDecimal balance) {
+        Account account = getAccount(accountId);
+        if (status != null && !status.isEmpty()) {
+            account.setStatus(AccountStatus.valueOf(status.toUpperCase()));
+        }
+        if (balance != null) {
+            account.setBalance(balance);
+        }
+        return accountRepositoryPort.save(account);
+    }
+
+    @Override
+    @Transactional
+    public void deleteAccount(UUID accountId) {
+        accountRepositoryPort.deleteById(accountId);
     }
 }

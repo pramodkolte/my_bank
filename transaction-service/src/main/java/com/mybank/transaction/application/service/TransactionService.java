@@ -18,6 +18,8 @@ import com.mybank.transaction.infrastructure.adapter.out.client.AccountDto;
 import java.util.Optional;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -53,7 +55,7 @@ public class TransactionService implements TransactionUseCase {
                     CompletableFuture.supplyAsync(() -> {
                         SecurityContextHolder.setContext(context);
                         try {
-                            return accountClientPort.getAccount(receiverId);
+                            return accountClientPort.getAccountStatus(receiverId);
                         } finally {
                             SecurityContextHolder.clearContext();
                         }
@@ -122,5 +124,24 @@ public class TransactionService implements TransactionUseCase {
         transaction.setFailureReason(reason);
         transactionRepositoryPort.save(transaction);
         transactionEventPublisherPort.publishTransactionFailedEvent(transaction);
+    }
+
+    @Override
+    public List<Transaction> getTransactionHistory(UUID authenticatedUserId, UUID accountId, BigDecimal minAmount, BigDecimal maxAmount, TransactionType type, LocalDateTime startDate, LocalDateTime endDate) {
+        // Verify ownership
+        AccountDto account = accountClientPort.getAccount(accountId)
+                .orElseThrow(() -> new IllegalStateException("Account not found."));
+        
+        if (!account.getOwnerId().equals(authenticatedUserId)) {
+            throw new AccessDeniedException("Access Denied: You do not own this account.");
+        }
+
+        return transactionRepositoryPort.findTransactions(accountId, minAmount, maxAmount, type, null, startDate, endDate);
+    }
+
+    @Override
+    public List<Transaction> getAllTransactions(UUID accountId, BigDecimal minAmount, BigDecimal maxAmount, TransactionType type, TransactionStatus status, LocalDateTime startDate, LocalDateTime endDate) {
+        // Global search - no ownership check
+        return transactionRepositoryPort.findTransactions(accountId, minAmount, maxAmount, type, status, startDate, endDate);
     }
 }
