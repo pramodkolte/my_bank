@@ -13,4 +13,7 @@ public interface AccountServiceClient {
     
     @GetMapping("/api/v1/accounts/{id}")
     ApiResponse<AccountDto> getAccount(@PathVariable("id") UUID id);
+
+    @GetMapping("/api/v1/accounts/{id}/status")
+    ApiResponse<AccountStatusDto> getAccountStatus(@PathVariable("id") UUID id);
 }

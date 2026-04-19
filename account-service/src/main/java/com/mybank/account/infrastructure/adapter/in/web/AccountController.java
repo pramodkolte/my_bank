@@ -3,6 +3,7 @@ package com.mybank.account.infrastructure.adapter.in.web;
 import com.mybank.account.application.port.in.AccountUseCase;
 import com.mybank.account.domain.model.Account;
 import com.mybank.account.infrastructure.adapter.in.web.dto.ApiResponse;
+import com.mybank.account.infrastructure.adapter.in.web.dto.AccountStatusResponse;
 import com.mybank.account.infrastructure.adapter.in.web.dto.CreateAccountRequest;
 import com.mybank.account.infrastructure.adapter.in.web.dto.UpdateBalanceRequest;
 import io.swagger.v3.oas.annotations.Operation;
@@ -36,6 +37,26 @@ public class AccountController {
                 .status(200)
                 .message("Account details retrieved")
                 .data(account)
+                .build();
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/{accountId}/status")
+    @Operation(summary = "Get Account Status", description = "Retrieves minimal account status for verification. Accessible by any authenticated user.")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<AccountStatusResponse>> getAccountStatus(@PathVariable UUID accountId) {
+        Account account = accountUseCase.getAccount(accountId);
+        AccountStatusResponse statusResponse = AccountStatusResponse.builder()
+                .id(account.getId())
+                .ownerId(account.getOwnerId())
+                .status(account.getStatus().name())
+                .build();
+        
+        ApiResponse<AccountStatusResponse> response = ApiResponse.<AccountStatusResponse>builder()
+                .timestamp(LocalDateTime.now())
+                .status(200)
+                .message("Account status retrieved")
+                .data(statusResponse)
                 .build();
         return ResponseEntity.ok(response);
     }
