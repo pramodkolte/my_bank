@@ -1,5 +1,6 @@
 package com.mybank.identity.infrastructure.adapter.in.web;
 
+import com.mybank.identity.application.port.in.AuthUseCase;
 import com.mybank.identity.infrastructure.adapter.in.web.dto.ApiResponse;
 import com.mybank.identity.infrastructure.adapter.in.web.dto.KycUpdateRequest;
 import io.swagger.v3.oas.annotations.Operation;
