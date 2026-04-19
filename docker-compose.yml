@@ -4,6 +4,11 @@ services:
     image: ${DOCKER_HUB_USER}/discovery-server:latest
     environment:
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
+      - JAVA_TOOL_OPTIONS=-XX:MaxRAMPercentage=80.0
+    deploy:
+      resources:
+        limits:
+          memory: 300M
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8761/actuator/health"]
       interval: 10s
@@ -21,6 +26,11 @@ services:
     image: ${DOCKER_HUB_USER}/config-server:latest
     environment:
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
+      - JAVA_TOOL_OPTIONS=-XX:MaxRAMPercentage=80.0
+    deploy:
+      resources:
+        limits:
+          memory: 300M
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9191/actuator/health"]
       interval: 10s
@@ -41,6 +51,11 @@ services:
     image: ${DOCKER_HUB_USER}/api-gateway:latest
     environment:
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
+      - JAVA_TOOL_OPTIONS=-XX:MaxRAMPercentage=80.0
+    deploy:
+      resources:
+        limits:
+          memory: 400M
     ports:
       - "80:8080"
     depends_on:
@@ -64,6 +79,11 @@ services:
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
       - RDS_DB_HOST=${RDS_DB_HOST}
       - RDS_DB_PASSWORD=${RDS_DB_PASSWORD}
+      - JAVA_TOOL_OPTIONS=-XX:MaxRAMPercentage=80.0
+    deploy:
+      resources:
+        limits:
+          memory: 512M
     depends_on:
       discovery-server:
         condition: service_healthy
@@ -84,6 +104,11 @@ services:
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
       - RDS_DB_HOST=${RDS_DB_HOST}
       - RDS_DB_PASSWORD=${RDS_DB_PASSWORD}
+      - JAVA_TOOL_OPTIONS=-XX:MaxRAMPercentage=80.0
+    deploy:
+      resources:
+        limits:
+          memory: 512M
     depends_on:
       discovery-server:
         condition: service_healthy
@@ -102,6 +127,11 @@ services:
     environment:
       - SPRING_CONFIG_IMPORT=optional:configserver:http://config-server:9191
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
+      - JAVA_TOOL_OPTIONS=-XX:MaxRAMPercentage=80.0
+    deploy:
+      resources:
+        limits:
+          memory: 400M
     depends_on:
       discovery-server:
         condition: service_healthy
@@ -121,6 +151,11 @@ services:
       - SPRING_CONFIG_IMPORT=optional:configserver:http://config-server:9191
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
       - MONGO_DB_PASSWORD=${MONGO_DB_PASSWORD}
+      - JAVA_TOOL_OPTIONS=-XX:MaxRAMPercentage=80.0
+    deploy:
+      resources:
+        limits:
+          memory: 450M
     depends_on:
       discovery-server:
         condition: service_healthy
@@ -141,6 +176,11 @@ services:
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
       - RDS_DB_HOST=${RDS_DB_HOST}
       - RDS_DB_PASSWORD=${RDS_DB_PASSWORD}
+      - JAVA_TOOL_OPTIONS=-XX:MaxRAMPercentage=80.0
+    deploy:
+      resources:
+        limits:
+          memory: 512M
     depends_on:
       discovery-server:
         condition: service_healthy

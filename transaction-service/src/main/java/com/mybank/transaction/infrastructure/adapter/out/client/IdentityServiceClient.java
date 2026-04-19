@@ -10,16 +10,11 @@ import org.springframework.web.bind.annotation.PathVariable;
 
 import java.util.UUID;
 
-@FeignClient(name = "account-service", configuration = FeignConfig.class)
-public interface AccountServiceClient {
-    
-    @GetMapping("/api/v1/accounts/{id}")
-    @CircuitBreaker(name = "accountService")
-    @Retry(name = "accountService")
-    ApiResponse<AccountDto> getAccount(@PathVariable("id") UUID id);
+@FeignClient(name = "identity-service", configuration = FeignConfig.class)
+public interface IdentityServiceClient {
 
-    @GetMapping("/api/v1/accounts/{id}/status")
-    @CircuitBreaker(name = "accountService")
-    @Retry(name = "accountService")
-    ApiResponse<AccountStatusDto> getAccountStatus(@PathVariable("id") UUID id);
+    @GetMapping("/api/v1/identity/users/{id}/verify")
+    @CircuitBreaker(name = "identityService")
+    @Retry(name = "identityService")
+    ApiResponse<Boolean> verifyUser(@PathVariable("id") UUID id);
 }

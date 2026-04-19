@@ -5,9 +5,11 @@ import com.mybank.transaction.domain.model.Transaction;
 import com.mybank.transaction.domain.model.TransactionStatus;
 import com.mybank.transaction.domain.model.TransactionType;
 import com.mybank.transaction.domain.port.out.AccountClientPort;
+import com.mybank.transaction.domain.port.out.IdentityClientPort;
 import com.mybank.transaction.domain.port.out.TransactionEventPublisherPort;
 import com.mybank.transaction.domain.port.out.TransactionRepositoryPort;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -25,6 +27,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class TransactionService implements TransactionUseCase {
@@ -32,14 +35,22 @@ public class TransactionService implements TransactionUseCase {
     private final TransactionRepositoryPort transactionRepositoryPort;
     private final TransactionEventPublisherPort transactionEventPublisherPort;
     private final AccountClientPort accountClientPort;
+    private final IdentityClientPort identityClientPort;
 
     @Override
     @Transactional
     public Transaction initiateTransfer(UUID authenticatedUserId, UUID senderId, UUID receiverId, BigDecimal amount) {
 
+        log.info("Initiating transfer of {} from {} to {} by user {}", amount, senderId, receiverId, authenticatedUserId);
+
+        // Phase 1: Identity Verification
+        if (!identityClientPort.isUserVerified(authenticatedUserId)) {
+            throw new AccessDeniedException("User is not verified or KYC is incomplete.");
+        }
+
         SecurityContext context = SecurityContextHolder.getContext();
 
-        // Run both account fetches in parallel on virtual threads
+        // Phase 2: Parallel Account verification on virtual threads
         try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
             CompletableFuture<Optional<AccountDto>> senderFuture =
                     CompletableFuture.supplyAsync(() -> {
@@ -70,6 +81,8 @@ public class TransactionService implements TransactionUseCase {
 
             // Ownership check
             if (!senderAccount.getOwnerId().equals(authenticatedUserId)) {
+                log.warn("Unauthorized transfer attempt: User {} tried to send from account {} owned by {}", 
+                        authenticatedUserId, senderId, senderAccount.getOwnerId());
                 throw new AccessDeniedException("Access Denied: You do not own the sender account.");
             }
 
