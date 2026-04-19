@@ -21,8 +21,10 @@ public class AccountClientAdapter implements AccountClientPort {
     @Override
     public java.util.Optional<AccountDto> getAccount(UUID accountId) {
         try {
-            return java.util.Optional.ofNullable(client.getAccount(accountId));
+            var response = client.getAccount(accountId);
+            return java.util.Optional.ofNullable(response.getData());
         } catch (Exception e) {
+            // Logs would be helpful here in a real app to see why the call failed
             return java.util.Optional.empty();
         }
     }
