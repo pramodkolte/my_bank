@@ -1,13 +1,4 @@
 services:
-  # Add this LIGHTWEIGHT log viewer (uses only ~20MB RAM)
-  dozzle:
-    image: amir20/dozzle:latest
-    container_name: dozzle
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-    ports:
-      - "8888:8080" # Access log UI at http://<EC2-IP>:8888
-
   # --- Spring Cloud Infrastructure ---
   discovery-server:
     image: ${DOCKER_HUB_USER}/discovery-server:latest
@@ -18,8 +9,13 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-    volumes:
-      - /home/ec2-user/banking-app/logs/discovery-server:/app/logs
+    logging:
+      driver: awslogs
+      options:
+        awslogs-region: ap-south-1
+        awslogs-group: banking-app-logs
+        awslogs-stream: discovery-server
+        awslogs-create-group: "true"
 
   config-server:
     image: ${DOCKER_HUB_USER}/config-server:latest
@@ -33,8 +29,13 @@ services:
     depends_on:
       discovery-server:
         condition: service_healthy
-    volumes:
-      - /home/ec2-user/banking-app/logs/config-server:/app/logs
+    logging:
+      driver: awslogs
+      options:
+        awslogs-region: ap-south-1
+        awslogs-group: banking-app-logs
+        awslogs-stream: config-server
+        awslogs-create-group: "true"
 
   api-gateway:
     image: ${DOCKER_HUB_USER}/api-gateway:latest
@@ -47,8 +48,13 @@ services:
         condition: service_healthy
       config-server:
         condition: service_healthy
-    volumes:
-      - /home/ec2-user/banking-app/logs/api-gateway:/app/logs
+    logging:
+      driver: awslogs
+      options:
+        awslogs-region: ap-south-1
+        awslogs-group: banking-app-logs
+        awslogs-stream: api-gateway
+        awslogs-create-group: "true"
 
   # --- Business Logic Services ---
   identity-service:
@@ -63,8 +69,13 @@ services:
         condition: service_healthy
       config-server:
         condition: service_healthy
-    volumes:
-      - /home/ec2-user/banking-app/logs/identity-service:/app/logs
+    logging:
+      driver: awslogs
+      options:
+        awslogs-region: ap-south-1
+        awslogs-group: banking-app-logs
+        awslogs-stream: identity-service
+        awslogs-create-group: "true"
 
   account-service:
     image: ${DOCKER_HUB_USER}/account-service:latest
@@ -78,8 +89,13 @@ services:
         condition: service_healthy
       config-server:
         condition: service_healthy
-    volumes:
-      - /home/ec2-user/banking-app/logs/account-service:/app/logs
+    logging:
+      driver: awslogs
+      options:
+        awslogs-region: ap-south-1
+        awslogs-group: banking-app-logs
+        awslogs-stream: account-service
+        awslogs-create-group: "true"
 
   notification-service:
     image: ${DOCKER_HUB_USER}/notification-service:latest
@@ -91,8 +107,13 @@ services:
         condition: service_healthy
       config-server:
         condition: service_healthy
-    volumes:
-      - /home/ec2-user/banking-app/logs/notification-service:/app/logs
+    logging:
+      driver: awslogs
+      options:
+        awslogs-region: ap-south-1
+        awslogs-group: banking-app-logs
+        awslogs-stream: notification-service
+        awslogs-create-group: "true"
 
   audit-service:
     image: ${DOCKER_HUB_USER}/audit-service:latest
@@ -105,8 +126,13 @@ services:
         condition: service_healthy
       config-server:
         condition: service_healthy
-    volumes:
-      - /home/ec2-user/banking-app/logs/audit-service:/app/logs
+    logging:
+      driver: awslogs
+      options:
+        awslogs-region: ap-south-1
+        awslogs-group: banking-app-logs
+        awslogs-stream: audit-service
+        awslogs-create-group: "true"
 
   transaction-service:
     image: ${DOCKER_HUB_USER}/transaction-service:latest
@@ -120,8 +146,13 @@ services:
         condition: service_healthy
       config-server:
         condition: service_healthy
-    volumes:
-      - /home/ec2-user/banking-app/logs/transaction-service:/app/logs
+    logging:
+      driver: awslogs
+      options:
+        awslogs-region: ap-south-1
+        awslogs-group: banking-app-logs
+        awslogs-stream: transaction-service
+        awslogs-create-group: "true"
 
 networks:
   default:

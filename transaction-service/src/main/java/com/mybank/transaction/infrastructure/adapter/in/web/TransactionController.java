@@ -9,8 +9,10 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.UUID;
 
 import java.time.LocalDateTime;
 
@@ -23,11 +25,16 @@ public class TransactionController {
     private final TransactionUseCase transactionUseCase;
 
     @PostMapping("/transfer")
-    // Restricts execution to tokens whose userId claim specifically matches the embedded senderId!
-    @PreAuthorize("authentication.tokenAttributes['userId'] == #request.senderId.toString()")
     @Operation(summary = "Initiate Transfer", description = "Initiates a fund transfer securely.")
-    public ResponseEntity<ApiResponse<Transaction>> initiateTransfer(@Valid @RequestBody TransferRequest request) {
+    public ResponseEntity<ApiResponse<Transaction>> initiateTransfer(
+            @Valid @RequestBody TransferRequest request,
+            JwtAuthenticationToken authentication) {
+
+        String userIdStr = (String) authentication.getTokenAttributes().get("userId");
+        UUID authenticatedUserId = UUID.fromString(userIdStr);
+
         Transaction transaction = transactionUseCase.initiateTransfer(
+                authenticatedUserId,
                 request.getSenderId(),
                 request.getReceiverId(),
                 request.getAmount()

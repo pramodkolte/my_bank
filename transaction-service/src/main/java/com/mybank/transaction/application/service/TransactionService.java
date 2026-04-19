@@ -8,8 +8,12 @@ import com.mybank.transaction.domain.port.out.AccountClientPort;
 import com.mybank.transaction.domain.port.out.TransactionEventPublisherPort;
 import com.mybank.transaction.domain.port.out.TransactionRepositoryPort;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.mybank.transaction.infrastructure.adapter.out.client.AccountDto;
+
+import java.util.Optional;
 
 import java.math.BigDecimal;
 import java.util.UUID;
@@ -27,27 +31,38 @@ public class TransactionService implements TransactionUseCase {
 
     @Override
     @Transactional
-    public Transaction initiateTransfer(UUID senderId, UUID receiverId, BigDecimal amount) {
+    public Transaction initiateTransfer(UUID authenticatedUserId, UUID senderId, UUID receiverId, BigDecimal amount) {
 
-        // Run both account-active checks in parallel on virtual threads (stable API, Java 21+)
+        // Run both account fetches in parallel on virtual threads
         try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
-            CompletableFuture<Boolean> senderFuture =
-                    CompletableFuture.supplyAsync(() -> accountClientPort.isAccountActive(senderId), executor);
-            CompletableFuture<Boolean> receiverFuture =
-                    CompletableFuture.supplyAsync(() -> accountClientPort.isAccountActive(receiverId), executor);
+            CompletableFuture<Optional<AccountDto>> senderFuture =
+                    CompletableFuture.supplyAsync(() -> accountClientPort.getAccount(senderId), executor);
+            CompletableFuture<Optional<AccountDto>> receiverFuture =
+                    CompletableFuture.supplyAsync(() -> accountClientPort.getAccount(receiverId), executor);
 
-            // Wait for both; propagates the first exception if any task fails
             CompletableFuture.allOf(senderFuture, receiverFuture).join();
 
-            if (!senderFuture.get() || !receiverFuture.get()) {
-                throw new IllegalStateException("One or both accounts are inactive or do not exist.");
+            AccountDto senderAccount = senderFuture.get()
+                    .orElseThrow(() -> new IllegalStateException("Sender account not found."));
+            AccountDto receiverAccount = receiverFuture.get()
+                    .orElseThrow(() -> new IllegalStateException("Receiver account not found."));
+
+            // Ownership check
+            if (!senderAccount.getOwnerId().equals(authenticatedUserId)) {
+                throw new AccessDeniedException("Access Denied: You do not own the sender account.");
             }
+
+            // Status check
+            if (!"ACTIVE".equalsIgnoreCase(senderAccount.getStatus()) || !"ACTIVE".equalsIgnoreCase(receiverAccount.getStatus())) {
+                throw new IllegalStateException("One or both accounts are inactive.");
+            }
+
         } catch (ExecutionException e) {
             throw new RuntimeException("Account verification failed", e.getCause());
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new RuntimeException("Account verification interrupted", e);
-        } catch (IllegalStateException e) {
+        } catch (AccessDeniedException | IllegalStateException e) {
             throw e;
         } catch (Exception e) {
             throw new RuntimeException("Account verification failed", e);

@@ -13,11 +13,17 @@ public class AccountClientAdapter implements AccountClientPort {
 
     @Override
     public boolean isAccountActive(UUID accountId) {
+        return getAccount(accountId)
+                .map(account -> "ACTIVE".equalsIgnoreCase(account.getStatus()))
+                .orElse(false);
+    }
+
+    @Override
+    public java.util.Optional<AccountDto> getAccount(UUID accountId) {
         try {
-            AccountDto account = client.getAccount(accountId);
-            return account != null && "ACTIVE".equalsIgnoreCase(account.getStatus());
+            return java.util.Optional.ofNullable(client.getAccount(accountId));
         } catch (Exception e) {
-            return false;
+            return java.util.Optional.empty();
         }
     }
 }
